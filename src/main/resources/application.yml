@@ -1,0 +1,23 @@
+server.port: 8081
+spring:
+  mail:
+    host: smtp.office365.com
+    port: 587
+    username: alertremittancev2@swifttech.com.np
+    password: R#W!tt@Pc34G00d
+    mail:
+      smtp:
+        auth: true
+        starttls:
+          enable: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/email
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+      dialect: org.hibernate.dialect.PostgreSQLDialect

@@ -1,74 +1,53 @@
 package com.swifttech.controller;
 
-import com.swifttech.model.User;
-import com.swifttech.repo.OtpRepo;
+import com.swifttech.dto.LoginDto;
+import com.swifttech.dto.RegisterDto;
 import com.swifttech.repo.UserRepo;
+import com.swifttech.request.RegenerateOtpRequest;
+import com.swifttech.request.VerifyAccountRequest;
 import com.swifttech.service.EmailService;
-import com.swifttech.util.OtpUtil;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/password")
+@RequiredArgsConstructor
+
 public class ResetPasswordController {
 
     private final EmailService emailService;
     private final UserRepo userRepo;
-    private final OtpRepo otpRepo;
 
-    public ResetPasswordController(EmailService emailService, UserRepo userRepo, OtpRepo otpRepo) {
-        this.emailService = emailService;
-        this.userRepo = userRepo;
-        this.otpRepo = otpRepo;
+
+
+    @PostMapping("/register")
+    public ResponseEntity<String> register(@RequestBody RegisterDto registerDto) {
+        return new ResponseEntity<>(emailService.register(registerDto), HttpStatus.OK);
     }
 
-    @PostMapping("/requestReset")
-    public ResponseEntity<String> requestResetPassword(@RequestBody String email) {
-        User user = emailService.findByEmail(email);
-
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("User not found");
-        }
-        String otp= OtpUtil.generateOtp();
-         emailService.sendResetEmail(user.getEmail());
-        return ResponseEntity.ok("Password reset instructions sent to your email");
+    @PutMapping("/verifyaccount")
+    public ResponseEntity<String> verifyAccount(@RequestBody VerifyAccountRequest request) {
+        String email= request.getEmail();
+        String otp= request.getOtp();
+        return new ResponseEntity<>(emailService.verifyAccount(email,otp), HttpStatus.OK);
+    }
+    @PutMapping("/regenerate-otp")
+    public ResponseEntity<String> regenerateOtp(@RequestBody RegenerateOtpRequest regenerateOtpRequest) {
+       String email= regenerateOtpRequest.getEmail();
+        return new ResponseEntity<>(emailService.regenerateOtp(email), HttpStatus.OK);
+    }
+    @PutMapping("/login")
+    public ResponseEntity<String> login(@RequestBody LoginDto loginDto) {
+        return new ResponseEntity<>(emailService.login(loginDto), HttpStatus.OK);
+    }
+    @PutMapping("/passwordreset")
+    public ResponseEntity<String>resetPassword(@RequestBody RegisterDto registerDto){
+        return new ResponseEntity<>(emailService.resetPassword(String.valueOf(registerDto)),HttpStatus.OK);
     }
 
-    @PostMapping("/verifyOtp")
-    public String verifyOtp(@RequestBody String email, @RequestBody String providedOtp) {
-        User user = userRepo.findByEmail(email);
-
-        if (user == null) {
-            return "User not found";
-        }
-
-
-        if (providedOtp.equals(user.(otpRepo))) {
-
-            user.setOtp(null);
-            userRepo.save(user);
-
-            return "OTP verification successful!";
-        } else {
-            return "Invalid OTP";
-        }
-    }
-
-    @PostMapping("/resetpassword")
-    public String resetPassword(@RequestBody String email,@RequestBody String newPassword){
-        User user= userRepo.findByEmail(email);
-        if (user==null){
-            return "User not found";
-        }
-        user.setPassword(newPassword);
-        userRepo.save(user);
-        return "password reset successful!";
-    }
 }
+
 
 

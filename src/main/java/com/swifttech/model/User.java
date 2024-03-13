@@ -17,11 +17,14 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private String name;
     @Column(unique = true)
     private String email;
+    private String otp;
     private String password;
     private String newPassword;
+    private boolean active;
     @Column(columnDefinition = "TIMESTAMP")
-    private LocalDate resetOtpExpiration;
+    private LocalDate otpGeneratedTime;
 
 }

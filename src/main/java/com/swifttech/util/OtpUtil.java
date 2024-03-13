@@ -1,11 +1,10 @@
 package com.swifttech.util;
 
-import org.springframework.stereotype.Service;
-
+import org.springframework.stereotype.Component;
 import java.security.SecureRandom;
 import java.util.Random;
 
-@Service
+@Component
 public class OtpUtil {
     public static String generateOtp(){
         Random random=new SecureRandom();

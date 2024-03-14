@@ -16,12 +16,11 @@ public class EmailUtil {
         MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage);
         mimeMessageHelper.setFrom("alertremittancev2@swifttech.com.np");
         mimeMessageHelper.setTo(email);
-        mimeMessageHelper.setSubject("Verify OTP");
-        mimeMessageHelper.setText("""
-        <div>
-          <a href="http://localhost:8081/verify-account?email=%s&otp=%s" target="_blank">click link to reset</a>
-        </div>
-        """.formatted(email, otp), true);
+        mimeMessageHelper.setSubject("Verify Account");
+        String messageBody = String.format(
+                "<div><p>Your account has been created successfully. Please verify your account using the OTP: <strong>%s</strong></p></div>",
+                otp);
+        mimeMessageHelper.setText(messageBody, true);
 
         mailSender.send(mimeMessage);
     }

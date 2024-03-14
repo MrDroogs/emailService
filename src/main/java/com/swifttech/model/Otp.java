@@ -1,32 +1,25 @@
 package com.swifttech.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Entity
 @Setter
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "test_user")
-public class User {
-
+@Table(name = "test_otp")
+public class Otp {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String name;
+    private String code;
     @Column(unique = true)
     private String email;
-    private String otp;
-    private String password;
-    private String newPassword;
-    private boolean active;
     @Column(columnDefinition = "TIMESTAMP")
     private LocalDateTime otpGeneratedTime;
-
-
-
 }

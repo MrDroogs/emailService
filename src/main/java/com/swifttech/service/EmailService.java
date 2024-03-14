@@ -2,23 +2,17 @@ package com.swifttech.service;
 
 import com.swifttech.dto.LoginDto;
 import com.swifttech.dto.RegisterDto;
-import com.swifttech.model.User;
+import com.swifttech.dto.request.RegenerateOtpRequest;
+import com.swifttech.dto.request.ResetPassword;
+import com.swifttech.dto.request.ResetPasswordRequest;
+import com.swifttech.dto.request.VerifyAccountRequest;
 
 public interface EmailService {
 
     public String register(RegisterDto registerDto);
-
-
-
     public String login(LoginDto loginDto);
 
-//    public String sendResetEmail(String email,String otp);
-
-
-
-    public String verifyAccount(String email,String otp);
-    public String regenerateOtp(String email);
-
-     public String resetPassword(String email);
+    public String verifyAccount(VerifyAccountRequest verifyAccountRequest);
+    public String regenerateOtp(RegenerateOtpRequest regenerateOtpRequest);
 
 }

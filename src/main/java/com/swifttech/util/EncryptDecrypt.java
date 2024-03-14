@@ -11,6 +11,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 
 import static com.swifttech.util.Constant.*;
+import static org.apache.tomcat.util.codec.binary.Base64.decodeBase64;
 
 @Component
 @Slf4j
@@ -40,7 +41,6 @@ public class EncryptDecrypt {
 
             Cipher cipher = Cipher.getInstance(algo);
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, iv);
-
             byte[] original = cipher.doFinal(Base64.decodeBase64(encrypted));
             return new String(original);
         } catch (Exception ex) {

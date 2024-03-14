@@ -1,4 +1,4 @@
-package com.swifttech.request;
+package com.swifttech.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

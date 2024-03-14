@@ -1,15 +1,13 @@
-package com.swifttech.request;
+package com.swifttech.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.validation.annotation.Validated;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Validated
-public class VerifyAccountRequest {
+public class ResetPasswordRequest {
     private String email;
     private String otp;
 

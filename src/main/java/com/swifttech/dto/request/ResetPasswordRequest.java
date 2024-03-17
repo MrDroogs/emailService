@@ -1,12 +1,14 @@
 package com.swifttech.dto.request;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.springframework.validation.annotation.Validated;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
+@Validated
 public class ResetPasswordRequest {
     private String email;
     private String otp;

@@ -1,25 +1,33 @@
 package com.swifttech.service.serviceImpl;
 
+import com.swifttech.dto.LoginDto;
+import com.swifttech.dto.request.ChangePassword;
 import com.swifttech.dto.request.ResetPassword;
-import com.swifttech.dto.request.ResetPasswordRequest;
+import com.swifttech.model.Otp;
+import com.swifttech.model.Status;
 import com.swifttech.model.User;
 import com.swifttech.repo.OtpRepo;
 import com.swifttech.repo.UserRepo;
+import com.swifttech.service.PasswordService;
 import com.swifttech.util.EmailUtil;
 import com.swifttech.util.EncryptDecrypt;
 import com.swifttech.util.OtpUtil;
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.swifttech.util.Constant.PASSWORD;
+
 @Service
 @RequiredArgsConstructor
 
-public class PasswordServiceImpl implements PasswordService{
+public class PasswordServiceImpl implements PasswordService {
     private final JavaMailSender javaMailSender;
     private  final OtpUtil otpUtil;
     private  final EmailUtil emailUtil;
@@ -27,52 +35,82 @@ public class PasswordServiceImpl implements PasswordService{
     private final OtpRepo otpRepo;
     private final EncryptDecrypt encryptDecrypt;
 
-    public String requestPasswordReset(ResetPasswordRequest passwordRequest) {
-        User user = userRepo.findByEmail(passwordRequest.getEmail());
+
+
+   @Override
+   public String resetPassword(ResetPassword resetPassword) {
+       try {
+           User user = userRepo.findByEmail(resetPassword.getEmail());
+           if (user == null) {
+               return "User not found";
+           }
+
+           Otp otp = otpRepo.findByStatus(Status.RESET);
+           if (otp == null) {
+               return "OTP not found";
+           }
+           String decryptedOtp = EncryptDecrypt.decrypt(otp.getOtp());
+
+           if (decryptedOtp == null) {
+               return "OTP decryption failed";
+           }
+
+           if (LocalDateTime.now()
+                   .isAfter(otp.getOtpExpiryTime())){
+               return "OTP expired. Please regenerate OTP and try again";
+           }
+
+           if (decryptedOtp.equals(resetPassword.getOtp())) {
+               if (!isValidPassword(resetPassword.getNewPassword())) {
+                   throw new RuntimeException("Invalid password");
+               }
+               if (!resetPassword.getNewPassword().equals(resetPassword.getConfirmPassword())) {
+                   return "New password and confirm password do not match";
+               }
+               String encryptedPassword = EncryptDecrypt.encrypt(resetPassword.getNewPassword());
+               user.setPassword(encryptedPassword);
+               user.setActive(true);
+               userRepo.save(user);
+               return "Password reset successful, you can now login";
+           } else{
+               return "OTP verification failed. Please enter the correct otp ";
+
+           }
+       } catch (Exception e) {
+           e.printStackTrace(); // Print the stack trace for debugging
+           return "An error occurred while resetting password";
+       }
+   }
+
+
+
+
+
+    @Override
+    public String changePassword(ChangePassword changePassword) {
+     User user=userRepo.findByEmail(changePassword.getEmail());
         if (user == null) {
             return "User not found";
         }
-        String code = OtpUtil.generateOtp();
-        try {
-            emailUtil.sendOtpEmail(passwordRequest.getEmail(), code);
-        } catch (MessagingException e) {
-            throw new RuntimeException("Unable to send otp please try again");
+        String newEncryptedPassword = EncryptDecrypt.encrypt(changePassword.getNewPassword());
+        String oldEncryptedPassword = EncryptDecrypt.encrypt(changePassword.getPassword());
+        if (newEncryptedPassword.equals(oldEncryptedPassword)) {
+            return "New password cannot be the same as the old password";
         }
-        String encryptedOtp = EncryptDecrypt.encrypt(code);
-        user.setOtp(encryptedOtp);
+        user.setPassword(newEncryptedPassword);
         userRepo.save(user);
-        SimpleMailMessage message=new SimpleMailMessage();
-        message.setTo(user.getEmail());
-        message.setFrom("alertremittancev2@swifttech.com.np");
-        message.setSubject("Password Reset");
-        message.setText("Your OTP for password reset is: " + code);
-        javaMailSender.send(message);
-        return "Password reset email sent successfully!";
+
+        return "Password updated successfully";
     }
 
     @Override
-    public String resetPassword(ResetPassword resetPassword) {
-        try {
-            User user = userRepo.findByEmail(resetPassword.getEmail());
-            if (user == null) {
-                return "User not found";
-            }
-            String decryptedOtp = EncryptDecrypt.decrypt(user.getOtp());
-            if (decryptedOtp.equals(resetPassword.getOtp()) &&
-                    Duration.between(user.getOtpGeneratedTime(), LocalDateTime.now()).getSeconds() < (5 * 60)) {
+    public String loginAttempts(LoginDto loginDto) {
+       return null;
+    }
 
-                if (!resetPassword.getNewPassword().equals(resetPassword.getConfirmPassword())) {
-                    return "New password and confirm password do not match";
-                }
-                user.setPassword(resetPassword.getNewPassword());
-                user.setActive(true);
-                userRepo.save(user);
-                return "Password reset successful, you can now login";
-            } else {
-                return "OTP verification failed or OTP expired. Please regenerate OTP and try again";
-            }
-        } catch (Exception e) {
-            return "An error occurred while resetting password";
-        }
+    private boolean isValidPassword(String password) {
+        Pattern pattern = Pattern.compile(PASSWORD);
+        Matcher matcher = pattern.matcher(password);
+        return matcher.matches();
     }
 }

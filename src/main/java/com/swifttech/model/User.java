@@ -1,10 +1,10 @@
 package com.swifttech.model;
 
 import jakarta.persistence.*;
-import lombok.*;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Setter
@@ -20,13 +20,8 @@ public class User {
     private String name;
     @Column(unique = true)
     private String email;
-    private String otp;
     private String password;
-    private String newPassword;
     private boolean active;
-    @Column(columnDefinition = "TIMESTAMP")
-    private LocalDateTime otpGeneratedTime;
-
-
+    private Long loginAttempt;
 
 }

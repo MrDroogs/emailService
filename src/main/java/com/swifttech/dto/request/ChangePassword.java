@@ -9,10 +9,9 @@ import org.springframework.validation.annotation.Validated;
 @Getter
 @Setter
 @Validated
-public class ResetPassword {
-    private Long id;
-    private String otp;
+public class ChangePassword {
     private String email;
+     private String password;
     private String newPassword;
     private String confirmPassword;
 

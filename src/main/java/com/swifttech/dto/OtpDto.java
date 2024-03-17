@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class OtpDto {
-    private String code;
+    private String otp;
 
     private String email;
     @Column(columnDefinition = "TIMESTAMP")

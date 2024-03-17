@@ -10,6 +10,7 @@ import org.springframework.validation.annotation.Validated;
 @Setter
 @Validated
 public class VerifyAccountRequest {
+
     private String email;
     private String otp;
 

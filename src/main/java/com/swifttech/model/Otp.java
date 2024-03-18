@@ -23,9 +23,15 @@ public class Otp {
     private User user;
     @Enumerated(EnumType.STRING)
     private Status status;
+    private boolean active;
     private String otp;
-    private Long otpGenerated;
     @Column(columnDefinition = "TIMESTAMP")
     private LocalDateTime otpGeneratedTime;
     private LocalDateTime otpExpiryTime;
+    private int failedAttemps;
+    @Column(columnDefinition = "TIMESTAMP")
+    private LocalDateTime blockStartTime;
+    @Column(columnDefinition = "TIMESTAMP")
+    private LocalDateTime blockedEndTime;
+
 }

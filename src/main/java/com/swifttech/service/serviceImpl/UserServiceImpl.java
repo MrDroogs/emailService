@@ -4,8 +4,8 @@ import com.swifttech.dto.LoginDto;
 import com.swifttech.dto.RegisterDto;
 import com.swifttech.dto.request.VerifyAccountRequest;
 import com.swifttech.model.Otp;
-import com.swifttech.model.User;
 import com.swifttech.model.Status;
+import com.swifttech.model.User;
 import com.swifttech.repo.OtpRepo;
 import com.swifttech.repo.UserRepo;
 import com.swifttech.service.UserService;
@@ -18,6 +18,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,15 +48,13 @@ public class UserServiceImpl implements UserService {
         String encryptPassword = EncryptDecrypt.encrypt(registerDto.getPassword());
         user.setPassword(encryptPassword);
 
-
         LocalDateTime otpGeneratedTime = LocalDateTime.now();
         LocalDateTime otpExpiryTime = otpGeneratedTime.plusMinutes(5);
         otp.setOtpGeneratedTime(otpGeneratedTime);
         otp.setOtpExpiryTime(otpExpiryTime);
         otp.setStatus(Status.REGISTER);
-
-        userRepo.save(user);
         otpRepo.save(otp);
+        userRepo.save(user);
 
         String generateOtp = otpUtil.generateOtp();
         String encryptedOtp = EncryptDecrypt.encrypt(generateOtp);
@@ -69,8 +69,6 @@ public class UserServiceImpl implements UserService {
 
         return "User registration successful";
     }
-
-
     public String verifyAccount(VerifyAccountRequest verifyAccountRequest) {
         try {
             User user = userRepo.findByEmail(verifyAccountRequest.getEmail());
@@ -105,17 +103,58 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-
     public String login(LoginDto loginDto) {
         User user = userRepo.findByEmail(loginDto.getEmail());
-        String decryptedPassword = EncryptDecrypt.decrypt(loginDto.getPassword());
-        if ((decryptedPassword != null &&
-                decryptedPassword.equals(user.getPassword()))) {
-            return "Password is incorrect";
-        } else if (!user.isActive()) {
-            return "your account is not verified";
+
+        if (user == null) {
+            return "User not found";
         }
-        return "Login successful";
+
+        if (!user.isActive()) {
+            return "Your account is not verified";
+        }
+
+        if (user.getStatus() == Status.BLOCKED) {
+            LocalDateTime currentTime = LocalDateTime.now();
+            LocalDateTime blockEndTime = user.getBlockEndTime();
+
+            if (currentTime.isBefore(blockEndTime)) {
+                return "Your account is blocked. Please try again later.";
+            } else {
+
+                user.setStatus(Status.ACTIVE);
+                user.setFailedAttempts(0);
+                user.setBlockStartTime(null);
+                user.setBlockEndTime(null);
+                userRepo.save(user);
+            }
+        }
+
+        String decryptedPassword = EncryptDecrypt.decrypt(user.getPassword());
+        if (decryptedPassword != null && decryptedPassword.equals(loginDto.getPassword())) {
+
+            user.setFailedAttempts(0);
+            userRepo.save(user);
+            return "Login successful";
+        } else {
+
+            int passwordAttempts = user.getFailedAttempts() + 1;
+            user.setFailedAttempts(passwordAttempts);
+            userRepo.save(user);
+
+            if (passwordAttempts >= 3) {
+
+                LocalDateTime blockStartTime = LocalDateTime.now();
+                LocalDateTime blockEndTime = blockStartTime.plusMinutes(5);
+                user.setStatus(Status.BLOCKED);
+                user.setBlockStartTime(blockStartTime);
+                user.setBlockEndTime(blockEndTime);
+                userRepo.save(user);
+                return "Maximum login attempts reached. Your account is now locked. Please try again after 5 minutes";
+            } else {
+                return "Password is incorrect. You have " + (3 - passwordAttempts) + " attempts remaining.";
+            }
+        }
     }
 
     private boolean isValidPassword(String password) {

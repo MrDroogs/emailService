@@ -42,6 +42,7 @@ public class EmailServiceImpl implements EmailService {
         }
         String encryptedOtp = EncryptDecrypt.encrypt(otp);
         code.setOtp(encryptedOtp);
+
         otpRepo.save(code);
         userRepo.save(user);
         return "Email sent... please reset";

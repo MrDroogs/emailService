@@ -1,6 +1,5 @@
 package com.swifttech.dto.request;
 
-import com.swifttech.model.Status;
 import lombok.*;
 import org.springframework.validation.annotation.Validated;
 
@@ -10,10 +9,9 @@ import org.springframework.validation.annotation.Validated;
 @Getter
 @Setter
 @Validated
-public class VerifyAccountRequest {
+
+public class BulkMailRequest {
 
     private String email;
-    private Status status;
-    private String otp;
 
 }

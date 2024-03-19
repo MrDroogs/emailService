@@ -1,10 +1,11 @@
 package com.swifttech.service.serviceImpl;
 
+import com.swifttech.dto.request.BulkMailRequest;
 import com.swifttech.dto.request.RegenerateOtpRequest;
 import com.swifttech.dto.request.ResetPasswordRequest;
 import com.swifttech.model.Otp;
-import com.swifttech.model.User;
 import com.swifttech.model.Status;
+import com.swifttech.model.User;
 import com.swifttech.repo.OtpRepo;
 import com.swifttech.repo.UserRepo;
 import com.swifttech.service.EmailService;
@@ -19,6 +20,8 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -33,8 +36,14 @@ public class EmailServiceImpl implements EmailService {
 
     public String regenerateOtp(RegenerateOtpRequest regenerateOtpRequest) {
         User user = userRepo.findByEmail(regenerateOtpRequest.getEmail());
-        Otp code = new Otp();
+
         String otp = otpUtil.generateOtp();
+        Otp code = new Otp();
+        LocalDateTime otpGeneratedTime = LocalDateTime.now();
+        LocalDateTime otpExpiryTime = otpGeneratedTime.plusMinutes(5);
+        code.setUser(user);
+        code.setOtpGeneratedTime(otpGeneratedTime);
+        code.setOtpExpiryTime(otpExpiryTime);
         try {
             emailUtil.sendOtpEmail(regenerateOtpRequest.getEmail(), otp);
         } catch (MessagingException e) {
@@ -42,7 +51,7 @@ public class EmailServiceImpl implements EmailService {
         }
         String encryptedOtp = EncryptDecrypt.encrypt(otp);
         code.setOtp(encryptedOtp);
-
+        code.setStatus(Status.REGISTER);
         otpRepo.save(code);
         userRepo.save(user);
         return "Email sent... please reset";
@@ -56,7 +65,6 @@ public class EmailServiceImpl implements EmailService {
         }
 
         String generatedOtp = OtpUtil.generateOtp();
-
 
         String encryptedOtp = EncryptDecrypt.encrypt(generatedOtp);
 
@@ -89,5 +97,35 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+//    @Override
+//    public String sendBulkEmail(BulkMailRequest bulkMailRequest) {
+//        try {
+//            MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+//            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage);
+//            mimeMessageHelper.setFrom("alertremittancev2@swifttech.com.np");
+//            mimeMessageHelper.setTo(sendBulkEmail(getAllEmails())));
+//            mimeMessageHelper.setSubject("Test email");
+//            String messageBody = String.format("<div><p>Your OTP for password reset is: <strong>%s</strong></p></div>");
+//            mimeMessageHelper.setText(messageBody, true);
+//
+//            javaMailSender.send(mimeMessage);
+//
+//            return "Password reset email sent successfully!";
+//        } catch (MessagingException e) {
+//            throw new RuntimeException("Unable to send OTP, please try again");
+//        }
+//
+//    }
+//
+//    @Override
+//    public List<String> getAllEmails() {
+//        // Implement logic to fetch email addresses from the database
+//        List<User> users = userRepo.findAll();
+//        List<String> emails = new ArrayList<>();
+//        for (User user : users) {
+//            emails.add(user.getEmail());
+//        }
+//        return emails;
+//    }
 
 }

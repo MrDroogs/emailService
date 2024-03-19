@@ -18,7 +18,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,9 +51,11 @@ public class UserServiceImpl implements UserService {
         LocalDateTime otpExpiryTime = otpGeneratedTime.plusMinutes(5);
         otp.setOtpGeneratedTime(otpGeneratedTime);
         otp.setOtpExpiryTime(otpExpiryTime);
+        otp.setUser(user);
         otp.setStatus(Status.REGISTER);
-        otpRepo.save(otp);
         userRepo.save(user);
+        otpRepo.save(otp);
+
 
         String generateOtp = otpUtil.generateOtp();
         String encryptedOtp = EncryptDecrypt.encrypt(generateOtp);
@@ -69,6 +70,7 @@ public class UserServiceImpl implements UserService {
 
         return "User registration successful";
     }
+
     public String verifyAccount(VerifyAccountRequest verifyAccountRequest) {
         try {
             User user = userRepo.findByEmail(verifyAccountRequest.getEmail());
@@ -77,28 +79,56 @@ public class UserServiceImpl implements UserService {
                 return "User not found";
             }
 
-            Otp otp = otpRepo.findById(user.getId())
-                    .orElseThrow();
+            if (user.getStatus() == Status.BLOCKED) {
+                LocalDateTime currentTime = LocalDateTime.now();
+                LocalDateTime blockEndTime = user.getBlockEndTime();
 
+                if (currentTime.isBefore(blockEndTime)) {
+                    return "Your account is blocked. Please try again later.";
+                } else {
+                    user.setStatus(Status.ACTIVE);
+                    user.setFailedAttempts(0);
+                    user.setBlockStartTime(null);
+                    user.setBlockEndTime(null);
+                    userRepo.save(user);
+                }
+            }
+
+            Optional<Otp> otpOptional = otpRepo.findTopByUserIdAndStatusOrderByIdDesc(user.getId(), Status.REGISTER);
+            if (otpOptional.isEmpty()) {
+                return "No OTP record found for this user";
+            }
+            Otp otp = otpOptional.get();
             String decryptedOtp = EncryptDecrypt.decrypt(otp.getOtp());
             LocalDateTime currentTime = LocalDateTime.now();
 
             if (currentTime.isBefore(otp.getOtpExpiryTime())) {
-                System.out.println("OTP is valid.");
-
                 if (decryptedOtp != null && decryptedOtp.equals(verifyAccountRequest.getOtp())) {
-                    user.setActive(true);
+                   user.setActive(true);
+                    otp.setFailedAttempts(0);
                     userRepo.save(user);
                     return "OTP verified, you can login";
                 } else {
-                    return "Invalid OTP";
+                    int otpAttempts = otp.getFailedAttempts() + 1;
+                    otp.setFailedAttempts(otpAttempts);
+                    userRepo.save(user);
+
+                    if (otpAttempts >= 3) {
+                        LocalDateTime blockStartTime = LocalDateTime.now();
+                        LocalDateTime blockEndTime = blockStartTime.plusMinutes(5);
+                        user.setStatus(Status.BLOCKED);
+                        user.setBlockStartTime(blockStartTime);
+                        user.setBlockEndTime(blockEndTime);
+                        userRepo.save(user);
+                        return "Maximum OTP verification attempts reached. Your account is now locked. Please try again after 5 minutes";
+                    } else {
+                        return "Invalid OTP. You have " + (3 - otpAttempts) + " attempts remaining.";
+                    }
                 }
             } else {
-                System.out.println("OTP has expired.");
                 return "OTP has expired, please regenerate OTP and try again";
             }
         } catch (Exception e) {
-
             return "Error occurred while verifying OTP";
         }
     }

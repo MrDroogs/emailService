@@ -2,6 +2,7 @@ package com.swifttech.controller;
 
 import com.swifttech.dto.LoginDto;
 import com.swifttech.dto.RegisterDto;
+import com.swifttech.dto.UserDto;
 import com.swifttech.dto.request.*;
 import com.swifttech.repo.UserRepo;
 import com.swifttech.service.EmailService;
@@ -50,5 +51,9 @@ public class RegisterController {
     public ResponseEntity<String>changePassword(@RequestBody ChangePassword changePassword){
         return new ResponseEntity<>(passwordService.changePassword(changePassword),HttpStatus.OK);
     }
+//    @PostMapping("/sendBulkEmail")
+//    public ResponseEntity<String>sendBulkEmail(@RequestBody BulkMailRequest bulkMailRequest){
+//        return new ResponseEntity<>(emailService.sendBulkEmail(bulkMailRequest),HttpStatus.OK);
+//    }
 
 }

@@ -28,7 +28,7 @@ public class Otp {
     @Column(columnDefinition = "TIMESTAMP")
     private LocalDateTime otpGeneratedTime;
     private LocalDateTime otpExpiryTime;
-    private int failedAttemps;
+    private int failedAttempts;
     @Column(columnDefinition = "TIMESTAMP")
     private LocalDateTime blockStartTime;
     @Column(columnDefinition = "TIMESTAMP")

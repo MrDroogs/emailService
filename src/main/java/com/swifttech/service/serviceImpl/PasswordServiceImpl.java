@@ -1,6 +1,5 @@
 package com.swifttech.service.serviceImpl;
 
-import com.swifttech.dto.LoginDto;
 import com.swifttech.dto.request.ChangePassword;
 import com.swifttech.dto.request.ResetPassword;
 import com.swifttech.model.Otp;
@@ -96,8 +95,6 @@ public class PasswordServiceImpl implements PasswordService {
 
         return "Password updated successfully";
     }
-
-
 
     private boolean isValidPassword(String password) {
         Pattern pattern = Pattern.compile(PASSWORD);

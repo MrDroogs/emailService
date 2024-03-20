@@ -2,12 +2,11 @@ package com.swifttech.controller;
 
 import com.swifttech.dto.LoginDto;
 import com.swifttech.dto.RegisterDto;
-import com.swifttech.dto.UserDto;
 import com.swifttech.dto.request.*;
 import com.swifttech.repo.UserRepo;
 import com.swifttech.service.EmailService;
-import com.swifttech.service.UserService;
 import com.swifttech.service.PasswordService;
+import com.swifttech.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +20,7 @@ public class RegisterController {
     private final UserService userService;
     private final PasswordService passwordService;
     private final EmailService emailService;
+
     private final UserRepo userRepo;
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody RegisterDto registerDto) {
@@ -51,9 +51,6 @@ public class RegisterController {
     public ResponseEntity<String>changePassword(@RequestBody ChangePassword changePassword){
         return new ResponseEntity<>(passwordService.changePassword(changePassword),HttpStatus.OK);
     }
-//    @PostMapping("/sendBulkEmail")
-//    public ResponseEntity<String>sendBulkEmail(@RequestBody BulkMailRequest bulkMailRequest){
-//        return new ResponseEntity<>(emailService.sendBulkEmail(bulkMailRequest),HttpStatus.OK);
-//    }
+
 
 }

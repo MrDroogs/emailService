@@ -9,6 +9,7 @@ import com.swifttech.model.User;
 import com.swifttech.repo.OtpRepo;
 import com.swifttech.repo.UserRepo;
 import com.swifttech.service.UserService;
+import com.swifttech.util.BlockTImeResetTask;
 import com.swifttech.util.EmailUtil;
 import com.swifttech.util.EncryptDecrypt;
 import com.swifttech.util.OtpUtil;
@@ -19,10 +20,13 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.swifttech.util.Constant.PASSWORD;
+import static com.swifttech.validation.EmailValidation.isValid;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +37,8 @@ public class UserServiceImpl implements UserService {
     private final EmailUtil emailUtil;
     private final UserRepo userRepo;
     private final OtpRepo otpRepo;
+    private final BlockTImeResetTask blockTImeResetTask;
+    private final ScheduledExecutorService scheduler= Executors.newScheduledThreadPool(1);
 
     public String register(RegisterDto registerDto) {
 
@@ -40,6 +46,9 @@ public class UserServiceImpl implements UserService {
         Otp otp = new Otp();
 
         user.setName(registerDto.getName());
+        if (!isValid(registerDto.getEmail())) {
+            throw new RuntimeException("invalid email");
+        }
         user.setEmail(registerDto.getEmail());
         if (!isValidPassword(registerDto.getPassword())) {
             throw new RuntimeException("invalid password ");
@@ -55,7 +64,6 @@ public class UserServiceImpl implements UserService {
         otp.setStatus(Status.REGISTER);
         userRepo.save(user);
         otpRepo.save(otp);
-
 
         String generateOtp = otpUtil.generateOtp();
         String encryptedOtp = EncryptDecrypt.encrypt(generateOtp);
@@ -86,11 +94,7 @@ public class UserServiceImpl implements UserService {
                 if (currentTime.isBefore(blockEndTime)) {
                     return "Your account is blocked. Please try again later.";
                 } else {
-                    user.setStatus(Status.ACTIVE);
-                    user.setFailedAttempts(0);
-                    user.setBlockStartTime(null);
-                    user.setBlockEndTime(null);
-                    userRepo.save(user);
+                    blockTImeResetTask.start();
                 }
             }
 
@@ -104,7 +108,7 @@ public class UserServiceImpl implements UserService {
 
             if (currentTime.isBefore(otp.getOtpExpiryTime())) {
                 if (decryptedOtp != null && decryptedOtp.equals(verifyAccountRequest.getOtp())) {
-                   user.setActive(true);
+                    user.setActive(true);
                     otp.setFailedAttempts(0);
                     userRepo.save(user);
                     return "OTP verified, you can login";
@@ -133,6 +137,8 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+
+
     public String login(LoginDto loginDto) {
         User user = userRepo.findByEmail(loginDto.getEmail());
 
@@ -152,11 +158,7 @@ public class UserServiceImpl implements UserService {
                 return "Your account is blocked. Please try again later.";
             } else {
 
-                user.setStatus(Status.ACTIVE);
-                user.setFailedAttempts(0);
-                user.setBlockStartTime(null);
-                user.setBlockEndTime(null);
-                userRepo.save(user);
+                blockTImeResetTask.start();
             }
         }
 

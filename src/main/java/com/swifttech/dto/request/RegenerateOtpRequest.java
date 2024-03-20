@@ -10,7 +10,7 @@ import org.springframework.validation.annotation.Validated;
 @Setter
 @Validated
 public class RegenerateOtpRequest {
-    private String email;
 
+    private String email;
 
 }

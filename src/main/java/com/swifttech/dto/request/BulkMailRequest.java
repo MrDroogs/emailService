@@ -12,6 +12,6 @@ import org.springframework.validation.annotation.Validated;
 
 public class BulkMailRequest {
 
-    private String email;
+    private String message;
 
 }

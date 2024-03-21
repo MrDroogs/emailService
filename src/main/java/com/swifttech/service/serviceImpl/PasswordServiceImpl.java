@@ -85,6 +85,7 @@ public class PasswordServiceImpl implements PasswordService {
         if (user == null) {
             return "User not found";
         }
+        String password = EncryptDecrypt.decrypt(user.getPassword());
         String newEncryptedPassword = EncryptDecrypt.encrypt(changePassword.getNewPassword());
         String oldEncryptedPassword = EncryptDecrypt.encrypt(changePassword.getPassword());
         if (newEncryptedPassword.equals(oldEncryptedPassword)) {
@@ -92,7 +93,6 @@ public class PasswordServiceImpl implements PasswordService {
         }
         user.setPassword(newEncryptedPassword);
         userRepo.save(user);
-
         return "Password updated successfully";
     }
 

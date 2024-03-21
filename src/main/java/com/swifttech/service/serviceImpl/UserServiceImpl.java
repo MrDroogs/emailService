@@ -9,7 +9,6 @@ import com.swifttech.model.User;
 import com.swifttech.repo.OtpRepo;
 import com.swifttech.repo.UserRepo;
 import com.swifttech.service.UserService;
-import com.swifttech.util.BlockTImeResetTask;
 import com.swifttech.util.EmailUtil;
 import com.swifttech.util.EncryptDecrypt;
 import com.swifttech.util.OtpUtil;
@@ -37,8 +36,8 @@ public class UserServiceImpl implements UserService {
     private final EmailUtil emailUtil;
     private final UserRepo userRepo;
     private final OtpRepo otpRepo;
-    private final BlockTImeResetTask blockTImeResetTask;
-    private final ScheduledExecutorService scheduler= Executors.newScheduledThreadPool(1);
+
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     public String register(RegisterDto registerDto) {
 
@@ -94,7 +93,12 @@ public class UserServiceImpl implements UserService {
                 if (currentTime.isBefore(blockEndTime)) {
                     return "Your account is blocked. Please try again later.";
                 } else {
-                    blockTImeResetTask.start();
+                    user.setStatus(Status.ACTIVE);
+                    user.setFailedAttempts(0);
+                    user.setBlockStartTime(null);
+                    user.setBlockEndTime(null);
+                    userRepo.save(user);
+
                 }
             }
 
@@ -137,8 +141,6 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-
-
     public String login(LoginDto loginDto) {
         User user = userRepo.findByEmail(loginDto.getEmail());
 
@@ -150,15 +152,19 @@ public class UserServiceImpl implements UserService {
             return "Your account is not verified";
         }
 
-        if (user.getStatus() == Status.BLOCKED) {
-            LocalDateTime currentTime = LocalDateTime.now();
+        if (user.getStatus().equals(Status.BLOCKED)) {
+
             LocalDateTime blockEndTime = user.getBlockEndTime();
 
-            if (currentTime.isBefore(blockEndTime)) {
-                return "Your account is blocked. Please try again later.";
+            if (LocalDateTime.now().isAfter(blockEndTime)) {
+                user.setStatus(Status.ACTIVE);
+                user.setFailedAttempts(0);
+                user.setBlockStartTime(null);
+                user.setBlockEndTime(null);
+                userRepo.save(user);
             } else {
+                return "Your account is blocked. Please try again later.";
 
-                blockTImeResetTask.start();
             }
         }
 
@@ -177,7 +183,7 @@ public class UserServiceImpl implements UserService {
             if (passwordAttempts >= 3) {
 
                 LocalDateTime blockStartTime = LocalDateTime.now();
-                LocalDateTime blockEndTime = blockStartTime.plusMinutes(5);
+                LocalDateTime blockEndTime = blockStartTime.plusMinutes(1);
                 user.setStatus(Status.BLOCKED);
                 user.setBlockStartTime(blockStartTime);
                 user.setBlockEndTime(blockEndTime);
